@@ -5,6 +5,7 @@ import warnings
 from math import floor
 from typing import TYPE_CHECKING, TypeVar
 
+import PalmSens
 import System
 from PalmSens.Comm import enumDeviceType
 
@@ -18,6 +19,39 @@ T = TypeVar('T')
 
 
 class MethodIncompatibleError(ValueError): ...
+
+
+def bipot_ranging_error(
+    psmethod: PalmSens.Method, capabilities: DeviceCapabilities, /
+) -> str | None:
+    """Error message if the method autoranges the bipot (WE2) current on a device that can't.
+
+    Only the Nexus supports autoranging on WE2. Other devices record the WE2 current on
+    one fixed range (min == max == start). `psmethod.Validate` does not check this.
+    """
+    if not psmethod.ExtraValueMsk.HasFlag(PalmSens.ExtraValueMask.BipotWE):
+        return None
+
+    if getattr(capabilities, 'SupportsBipotAutoranging', False):
+        return None
+
+    ranging = getattr(psmethod, 'BipotRanging', None)
+    if ranging is None:
+        return None
+
+    ranges = (
+        ranging.MinimumCurrentRange.Description,
+        ranging.MaximumCurrentRange.Description,
+        ranging.StartCurrentRange.Description,
+    )
+    if len(set(ranges)) == 1:
+        return None
+
+    return (
+        f'Bipot current autoranging (min {ranges[0]}, max {ranges[1]}, start {ranges[2]}) '
+        f'is not supported on {capabilities.DeviceType}. '
+        'Set `bipot.current_range` to a single fixed range.'
+    )
 
 
 def wrap_task(clr_task: System.Task[T]) -> asyncio.Future[T]:

@@ -427,12 +427,15 @@ class BiPot(BaseSettings):
     An absolute potential of WE2 in `constant` mode, or the offset versus WE1 in
     `offset` mode."""
 
-    current_range: CurrentRange = Field(default_factory=CurrentRange)
+    current_range: CurrentRange = Field(
+        default_factory=lambda: CurrentRange(min='100uA', max='100uA', start='100uA')
+    )
     """Set the bipotential current range.
 
-    Can be a fixed current range or a ranging current. Only the Nexus supports
-    autoranging for WE2. Other instruments require a single range, so check the
-    specifications of your instrument.
+    A fixed current range (100 uA) by default. Can be a fixed current range or a
+    ranging current, but only the Nexus supports autoranging for WE2
+    (see `supports_bipot_autoranging`). On other instruments, a ranging current
+    (min != max) is refused when the method is validated.
 
     Internally, a fixed current range is represented by an autoranging current with equal min/max ranges."""
 
