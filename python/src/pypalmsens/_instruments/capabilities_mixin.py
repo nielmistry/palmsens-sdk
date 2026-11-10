@@ -12,7 +12,7 @@ from .._types import (
     MethodTypeCompatible,
 )
 from .capabilities import Capabilities, CapabilitiesInterface
-from .shared import MethodIncompatibleError
+from .shared import MethodIncompatibleError, bipot_ranging_error
 
 
 class HasCommProtocol(Protocol):
@@ -82,6 +82,20 @@ class CapabilitiesMixin:
         self.ensure_connection()
         return CapabilitiesInterface(comm=self._comm).supported_bipot_current_ranges
 
+    def supports_bipot_autoranging(self: HasCommProtocol) -> bool:
+        """Return True if the bipot (WE2) current can autorange on this device.
+
+        Only the Nexus supports this. Other devices record the WE2 current
+        on a single fixed current range.
+
+        Returns
+        -------
+        supported: bool
+            True if bipot autoranging is supported.
+        """
+        self.ensure_connection()
+        return CapabilitiesInterface(comm=self._comm).supports_bipot_autoranging
+
     def supported_potential_ranges(self: HasCommProtocol) -> list[AllowedPotentialRanges]:
         """List applied potential ranges supported by this device.
 
@@ -136,6 +150,10 @@ class CapabilitiesMixin:
         capabilities = self._comm.Capabilities
 
         psmethod = method._to_psmethod()
+
+        if message := bipot_ranging_error(psmethod, capabilities):
+            raise MethodIncompatibleError(f'Method not compatible:\n{message}')
+
         errors = psmethod.Validate(capabilities)
 
         if any(error.IsFatal for error in errors):

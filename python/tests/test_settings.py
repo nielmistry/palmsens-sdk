@@ -181,6 +181,14 @@ def test_BipotSettings():
     assert new_params == params
 
 
+def test_BipotSettings_default_is_fixed():
+    params = ps.settings.BiPot()
+
+    assert params.current_range.min == '100uA'
+    assert params.current_range.max == '100uA'
+    assert params.current_range.start == '100uA'
+
+
 def test_BipotSettings_fixed():
     obj = Techniques.CyclicVoltammetry()
 

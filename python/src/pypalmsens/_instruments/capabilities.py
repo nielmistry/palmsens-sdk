@@ -233,6 +233,13 @@ class CapabilitiesInterface(BaseModel):
 
     @computed_field
     @property
+    def supports_bipot_autoranging(self) -> bool:
+        # Only MethodSCRIPT devices declare it (True on the Nexus);
+        # older devices (PalmSens4, EmStat3, ...) don't have the property.
+        return bool(getattr(self.comm.Capabilities, 'SupportsBipotAutoranging', False))
+
+    @computed_field
+    @property
     def is_galvanostat(self) -> bool:
         return self.comm.Capabilities.IsGalvanostat
 
@@ -441,6 +448,10 @@ class Capabilities(BaseModel):
 
     has_bipot: bool
     """True if bipot (WE2) capabilities are present"""
+
+    supports_bipot_autoranging: bool
+    """True if the bipot (WE2) current can autorange (Nexus only).
+    Other instruments record WE2 on a single fixed current range."""
 
     is_galvanostat: bool
     """True if the potentiastat can act as a galvanostat."""
